@@ -1,6 +1,6 @@
 <template>
   <div>
-    Search Key Word:
+    Search Key Words:
     <input
       type="search"
       class="inp"
