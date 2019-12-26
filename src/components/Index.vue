@@ -1,5 +1,6 @@
 <template>
   <div>
+<<<<<<< Updated upstream
     Search Key Words:
     <input
       type="search"
@@ -67,158 +68,70 @@
         <li v-for="(ngram, index) in ngrams" :key="index">{{ ngram }}</li>
       </ul>
     </div>
+=======
+    <input type="text" v-model="first_name" placeholder="First name" />
+    <input type="text" v-model="last_name" placeholder="Last name" />
+    <button @click="generateNames()">Generate Names</button>
+    <ol>
+      <li v-for="(word, index) in combined_words" :key="index">{{ word }}</li>
+    </ol>
+>>>>>>> Stashed changes
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+// import axios from 'axios';
 import 'core-js'; // <- at the top of your entry point
 export default {
   name: 'Index',
-  props: {
-    msg: String
-  },
+  props: {},
   data() {
     return {
-      keyword: '',
-      keyword2: '',
-      words: [],
-      words2: [],
+      brand_names: ['Airtek', 'Accort'],
+      suffix: ['Logistics', 'Services'],
+      first_name: 'Karl',
+      last_name: 'Cayanan',
       combined_words: [],
-      beginnings: [],
-      beginnings2: [],
-      ngrams: {},
-      ngrams2: {},
-      order: 3,
-      generated_names: []
+      syllables: [],
+      order: 3
     };
   },
   methods: {
-    fetchWordsAPI() {
-      if (this.keyword === '') {
-        return alert('Please input keyword 1');
-      }
-      if (this.keyword2 === '') {
-        return alert('Please input keyword 2');
-      }
-
-      this.generated_names = [];
-
-      axios
-        .get(`https://api.datamuse.com/words?rel_trg=${this.keyword}&max=50`)
-        .then(response => {
-          this.words = [];
-          this.beginnings = [];
-          response.data.forEach(data => {
-            this.words.push(data.word);
-          });
-          // this.words = response.data;
-          this.generateGrams();
-        })
-        .catch(err => {
-          console.log(err);
+    generateSyllables() {
+      const syllableRegex = /[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi;
+      this.brand_names.forEach(name => {
+        var holder = name.match(syllableRegex);
+        holder.forEach(word => {
+          this.syllables.push(word);
         });
-
-      axios
-        .get(`https://api.datamuse.com/words?rel_trg=${this.keyword2}&max=50`)
-        .then(response => {
-          this.words2 = [];
-          this.beginnings2 = [];
-          response.data.forEach(data => {
-            this.words2.push(data.word);
-          });
-          // this.words = response.data;
-          this.generateGrams2();
-        })
-        .catch(err => {
-          console.log(err);
+      });
+    },
+    generateNames() {
+      this.combined_words = [];
+      this.syllables.forEach(first => {
+        this.syllables.forEach(second => {
+          first = first.replace(/^\w/, c => c.toUpperCase());
+          second = second.replace(/^\w/, c => c.toUpperCase());
+          if (first === second)
+            console.log(`first: ${first}, second: ${second}`);
+          else {
+            second = second.replace(/^\w/, c => c.toLowerCase());
+            this.suffix.forEach(suffix => {
+              this.combined_words.push(
+                `${this.first_name}'s ${first}${second} ${suffix}`
+              );
+              this.combined_words.push(
+                `${this.last_name}'s ${first}${second} ${suffix}`
+              );
+            });
+          }
         });
-    },
-
-    generateGrams() {
-      for (var j = 0; j < this.words.length; j++) {
-        var txt = this.words[j];
-        for (var i = 0; i < txt.length - this.order; i++) {
-          var gram = txt.substring(i, i + this.order);
-
-          if (i === 0) {
-            this.beginnings.push(gram);
-          }
-
-          if (!this.ngrams[gram]) {
-            this.ngrams[gram] = [];
-          }
-
-          this.ngrams[gram].push(txt.charAt(i + this.order));
-          // this.ngrams.push(gram);
-        }
-      }
-    },
-    generateGrams2() {
-      for (var j = 0; j < this.words2.length; j++) {
-        var txt = this.words2[j];
-        for (var i = 0; i < txt.length - this.order; i++) {
-          var gram = txt.substring(i, i + this.order);
-
-          if (i === 0) {
-            this.beginnings2.push(gram);
-          }
-
-          if (!this.ngrams2[gram]) {
-            this.ngrams2[gram] = [];
-          }
-
-          this.ngrams2[gram].push(txt.charAt(i + this.order));
-          // this.ngrams.push(gram);
-        }
-      }
-    },
-    markovIt() {
-      var currentGram = this.beginnings[
-        Math.floor(Math.random() * this.beginnings.length)
-      ];
-      var currentGram2 = this.beginnings2[
-        Math.floor(Math.random() * this.beginnings2.length)
-      ];
-      var result = currentGram;
-      var result2 = currentGram2;
-
-      for (var i = 0; i < 10; i++) {
-        var possibilities = this.ngrams[currentGram];
-        if (!possibilities) {
-          break;
-        }
-        var next =
-          possibilities[Math.floor(Math.random() * possibilities.length)];
-        result += next;
-        var len = result.length;
-        currentGram = result.substring(len - this.order, len);
-      }
-      for (var i2 = 0; i2 < 10; i2++) {
-        var possibilities2 = this.ngrams2[currentGram2];
-        if (!possibilities2) {
-          break;
-        }
-        var next2 =
-          possibilities2[Math.floor(Math.random() * possibilities2.length)];
-        result2 += next2;
-        var len2 = result2.length;
-        currentGram2 = result2.substring(len2 - this.order, len2);
-      }
-
-      result = result.replace(/^\w/, c => c.toUpperCase());
-      result2 = result2.replace(/^\w/, c => c.toUpperCase());
-
-      this.generated_names.push(result + result2);
-    },
-    markovMultiplier(multiple) {
-      for (var i = 0; i < multiple; i++) {
-        this.markovIt();
-      }
+      });
+      this.combined_words.sort();
     }
   },
   mounted() {
-    this.generateGrams();
+    this.generateSyllables();
   }
 };
 </script>
