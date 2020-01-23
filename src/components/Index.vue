@@ -1,21 +1,68 @@
 <template>
   <div>
-    <h1>MY DAD IS A POOP</h1>
-    <div
-      style="padding:5px;"
-      id="output"
-      v-for="(name, index) in names"
-      :key="index"
-    >
-      {{ name }}
-    </div>
+    <select v-model="s_industry" aria-placeholder="Select a industryt">
+      <option value="" disabled>Select Industry</option>
+      <option
+        v-for="i_industry in Industry"
+        :key="i_industry"
+        :value="i_industry"
+        >{{ i_industry }}</option
+      >
+    </select>
+    <button @click="fetchWordsAPI(s_industry)">Search</button>
+    <hr />
+    <table width="100%" border="1">
+      <tr>
+        <th>Original Code</th>
+        <th v-if="s_industry === '' || related_words.length === 0">
+          Related Words
+        </th>
+        <th v-else>Related Words for {{ s_industry }}</th>
+        <th>Industry + Related Words</th>
+        <th>Mix of Prefix or Suffix</th>
+      </tr>
+      <tr>
+        <td valign="top">
+          <div
+            style="padding:5px;"
+            id="output"
+            v-for="(name, index) in names"
+            :key="index"
+          >
+            {{ name }}
+          </div>
+        </td>
+        <td valign="top">
+          <p v-for="(r_word, index) in related_words" :key="index">
+            {{ r_word }}
+          </p>
+        </td>
+        <td valign="top">
+          <p v-for="(ir_word, index) in industry_related_words" :key="index">
+            {{ ir_word }}
+          </p>
+        </td>
+      </tr>
+    </table>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
+      Industry: ['Lawyer', 'Plumber', 'Consulant', 'Construction'],
+      IndustryWordCombination: [
+        ['Industry', 'Word'],
+        ['Word', 'Industry']
+      ],
+      MixCombination: [
+        ['Prefix', 'Industry'],
+        ['Industry', 'Suffix'],
+        ['Prefix', 'Industry', 'Suffix']
+      ],
       Components: [
         {
           Founder: [
@@ -81,9 +128,35 @@ export default {
         ['Keyword', 'Distinguisher', 'TradesPlural'],
         ['Keyword', 'Distinguisher', 'TradesSingular']
       ],
+      Prefix: [
+        're',
+        'dis',
+        'over',
+        'un',
+        'mis',
+        'out',
+        'be',
+        'co',
+        'de',
+        'fore',
+        'inter',
+        'pre',
+        'sub',
+        'trans',
+        'under',
+        'anti',
+        'auto',
+        'bi',
+        'co',
+        'counter-'
+      ],
+      Suffix: ['ise', 'ate', 'fy', 'en'],
       names: [],
       order: 3,
-      distgram: {}
+      distgram: {},
+      related_words: [],
+      s_industry: '',
+      industry_related_words: []
     };
   },
   created() {
@@ -137,6 +210,38 @@ export default {
           this.distgram[gram].push(txt.charAt(i + this.order));
         }
       }
+    },
+    fetchWordsAPI(keyword) {
+      axios
+        .get(
+          `https://api.datamuse.com/words?rel_trg=${keyword}&ml=${keyword}&max=50`
+        )
+        .then(response => {
+          this.related_words = [];
+          response.data.forEach(data => {
+            this.related_words.push(data.word);
+          });
+          this.industryRelatedWordsCombination();
+          // this.words = response.data;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    industryRelatedWordsCombination() {
+      this.related_words.forEach(word => {
+        this.industry_related_words.push(
+          this.randomEntry(this.IndustryWordCombination)
+            .map(key => {
+              this.s_industry = this.s_industry.replace(/^\w/, c =>
+                c.toLowerCase()
+              );
+              if (key === 'Industry') return this.s_industry;
+              if (key === 'Word') return word;
+            })
+            .join('')
+        );
+      });
     }
   }
 };
